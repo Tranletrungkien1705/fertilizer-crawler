@@ -1,0 +1,35 @@
+name: crawl
+
+# Runs the crawler on GitHub's machines instead of the laptop.
+# Free tier gives 2000 minutes/month; a run like this costs ~3 minutes.
+on:
+  schedule:
+    - cron: "0 22 * * *"   # 05:00 Vietnam time daily (UTC+7)
+  workflow_dispatch: {}
+
+jobs:
+  crawl:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install "psycopg[binary]"
+
+      - name: Crawl
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python main.py --limit 100
+
+      - name: Summary
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: python main.py --stats

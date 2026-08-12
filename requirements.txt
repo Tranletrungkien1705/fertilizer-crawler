@@ -1,0 +1,7 @@
+httpx>=0.28
+selectolax>=0.4
+tenacity>=9.0
+python-dotenv>=1.0
+
+# Only needed when DATABASE_URL points at Postgres (Neon / Supabase):
+# psycopg[binary]>=3.2

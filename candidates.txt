@@ -1,0 +1,28 @@
+# Vietnamese agricultural retail shops to evaluate with discover.py
+#   python discover.py --file candidates.txt --write
+#
+# Only shops that publish prices survive the check; B2B suppliers that print
+# "vui long lien he" are rejected automatically.
+
+# agricultural supplies (vat tu nong nghiep)
+cuahang-vtnn.com
+thegioinongnghiep.com
+vtnnkhuya.com
+dinhduongcaytrong.com
+th-agricare.com.vn
+nongduocxanh.com
+sieuthithuocbvtv.com
+
+# garden / seeds
+thegioilamvuon.com
+hatgiongphuongnam.com
+hatgiongnongnghiep.net
+muahatgiong.vn
+shophatgiong.vn
+sfarm.vn
+namix.vn
+
+# already onboarded (kept for reference; discover.py skips them)
+# nongnghieppho.vn
+# vuonsaigon.vn
+# nongnghiepshop.vn

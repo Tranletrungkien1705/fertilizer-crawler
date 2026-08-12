@@ -1,0 +1,225 @@
+[
+  {
+    "name": "nongnghieppho",
+    "enabled": true,
+    "note": "Haravan platform. robots.txt allows /collections/ and /products/.",
+    "list_urls": [
+      "https://nongnghieppho.vn/collections/phan-npk",
+      "https://nongnghieppho.vn/collections/phan-huu-co",
+      "https://nongnghieppho.vn/collections/phan-bon-la",
+      "https://nongnghieppho.vn/collections/phan-kali",
+      "https://nongnghieppho.vn/collections/phan-vo-co",
+      "https://nongnghieppho.vn/collections/phan-dau-trau",
+      "https://nongnghieppho.vn/collections/phan-tan-cham",
+      "https://nongnghieppho.vn/collections/phan-trun-que"
+    ],
+    "selectors": {
+      "product_link": "a[href*='/products/']",
+      "name": "h1",
+      "price": ".price-box",
+      "description": ".product-description",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "vuonsaigon",
+    "enabled": true,
+    "note": "WooCommerce. robots.txt only blocks wp-admin and add-to-cart params. 88 products over 4 pages.",
+    "list_urls": [
+      "https://vuonsaigon.vn/danh-muc/phan-bon",
+      "https://vuonsaigon.vn/danh-muc/phan-bon/page/2",
+      "https://vuonsaigon.vn/danh-muc/phan-bon/page/3",
+      "https://vuonsaigon.vn/danh-muc/phan-bon/page/4"
+    ],
+    "selectors": {
+      "product_link": "a[href*='/san-pham/']",
+      "name": "h1",
+      "price": "p.price",
+      "description": ".woocommerce-product-details__short-description",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "nongnghiepshop",
+    "enabled": true,
+    "note": "Haravan with flat product URLs, so links are matched by card class, not path. Paginates with ?page=N.",
+    "list_urls": [
+      "https://nongnghiepshop.vn/phan-bon",
+      "https://nongnghiepshop.vn/phan-bon?page=2",
+      "https://nongnghiepshop.vn/phan-bon?page=3",
+      "https://nongnghiepshop.vn/phan-bon?page=4",
+      "https://nongnghiepshop.vn/phan-bon?page=5",
+      "https://nongnghiepshop.vn/phan-bon?page=6",
+      "https://nongnghiepshop.vn/phan-vo-co",
+      "https://nongnghiepshop.vn/phan-vo-co?page=2",
+      "https://nongnghiepshop.vn/phan-bon-la",
+      "https://nongnghiepshop.vn/phan-bon-la?page=2"
+    ],
+    "selectors": {
+      "product_link": "a.product-name",
+      "name": "h1",
+      "price": ".product-price",
+      "description": ".product-summary",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "phanbondaithinhphat",
+    "enabled": false,
+    "note": "DISABLED: every product shows 'Gia ban: vui long lien he' - no public prices, useless for comparison.",
+    "list_urls": [
+      "https://www.phanbondaithinhphat.vn/collections/phan-npk-nhap-khau"
+    ],
+    "selectors": {
+      "product_link": "a[href*='/products/']",
+      "name": "h1",
+      "price": ".product-price",
+      "description": ".product-description",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "phanbonvietfarm",
+    "enabled": false,
+    "note": "DISABLED: B2B supplier, all prices are 'Lien He'.",
+    "list_urls": [
+      "https://phanbonvietfarm.com/phan-bon-npk"
+    ],
+    "selectors": {
+      "product_link": "a.woocommerce-loop-product__link",
+      "name": "h1",
+      "price": "p.price",
+      "description": ".woocommerce-product-details__short-description",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "cuahangvtnn",
+    "enabled": true,
+    "note": "auto-discovered from https://cuahang-vtnn.com/phan-bon/",
+    "list_urls": [
+      "https://cuahang-vtnn.com/phan-bon/",
+      "https://cuahang-vtnn.com/thuoc-tru-sau/",
+      "https://cuahang-vtnn.com/thuoc-tri-benh/",
+      "https://cuahang-vtnn.com/giong-cay-gio-bau/",
+      "https://cuahang-vtnn.com/dung-cu-nong-nghiep/",
+      "https://cuahang-vtnn.com/hat-giong-cay-he-ta/"
+    ],
+    "selectors": {
+      "product_link": "a.woocommerce-loop-product__link",
+      "name": "h1.product_title",
+      "price": "p.price",
+      "description": ".woocommerce-product-details__short-description",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "vtnnkhuya",
+    "enabled": true,
+    "note": "auto-discovered from https://vtnnkhuya.com/phan-bon",
+    "list_urls": [
+      "https://vtnnkhuya.com/phan-bon",
+      "https://vtnnkhuya.com/thuoc-co",
+      "https://vtnnkhuya.com/thuoc-oc",
+      "https://vtnnkhuya.com/hat-giong"
+    ],
+    "selectors": {
+      "product_link": ".product-info a",
+      "name": "h1",
+      "price": ".product-price",
+      "description": ".product-summary",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "dinhduongcaytrong",
+    "enabled": true,
+    "note": "auto-discovered from https://dinhduongcaytrong.com/collections/dinh-duong",
+    "list_urls": [
+      "https://dinhduongcaytrong.com/collections/dinh-duong",
+      "https://dinhduongcaytrong.com/collections/phan-bon-la",
+      "https://dinhduongcaytrong.com/collections/phan-bon-goc",
+      "https://dinhduongcaytrong.com/collections/thuoc-tru-sau",
+      "https://dinhduongcaytrong.com/collections/thuoc-tru-oc-tru-co",
+      "https://dinhduongcaytrong.com/collections/benh-hai-va-thuoc-tri"
+    ],
+    "selectors": {
+      "product_link": "a[href*='/products/']",
+      "name": "h1",
+      "price": ".product-price",
+      "description": ".product-description",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "nongduocxanh",
+    "enabled": true,
+    "note": "auto-discovered from https://nongduocxanh.com/collections/phan-bon",
+    "list_urls": [
+      "https://nongduocxanh.com/collections/phan-bon",
+      "https://nongduocxanh.com/collections/phan-bon-la",
+      "https://nongduocxanh.com/collections/phan-bon-re",
+      "https://nongduocxanh.com/collections/phan-huu-co",
+      "https://nongduocxanh.com/collections/thuoc-tru-co",
+      "https://nongduocxanh.com/collections/thuoc-tru-sau"
+    ],
+    "selectors": {
+      "product_link": "a[href*='/products/']",
+      "name": "h1",
+      "price": ".product-price",
+      "description": ".product-description",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "thegioilamvuon",
+    "enabled": true,
+    "note": "auto-discovered from https://thegioilamvuon.com/cay-giong/",
+    "list_urls": [
+      "https://thegioilamvuon.com/cay-giong/",
+      "https://thegioilamvuon.com/giong-rau/",
+      "https://thegioilamvuon.com/hat-giong/",
+      "https://thegioilamvuon.com/dat-trong-cay/",
+      "https://thegioilamvuon.com/hat-giong-hoa/",
+      "https://thegioilamvuon.com/hat-giong-rau/"
+    ],
+    "selectors": {
+      "product_link": "a.woocommerce-loop-product__link",
+      "name": "h1.product_title",
+      "price": "p.price",
+      "description": ".product-summary",
+      "brand": null,
+      "category": null
+    }
+  },
+  {
+    "name": "hatgiongphuongnam",
+    "enabled": true,
+    "note": "auto-discovered from https://hatgiongphuongnam.com/vat-tu-180.html",
+    "list_urls": [
+      "https://hatgiongphuongnam.com/vat-tu-180.html",
+      "https://hatgiongphuongnam.com/cu-giong--173.html",
+      "https://hatgiongphuongnam.com/hat-giong-co-154.html",
+      "https://hatgiongphuongnam.com/hat-giong-ot-159.html",
+      "https://hatgiongphuongnam.com/hat-giong-hoa-152.html",
+      "https://hatgiongphuongnam.com/hat-giong-ca-chua-157.html"
+    ],
+    "selectors": {
+      "product_link": "a[href*='/san-pham/']",
+      "name": "h1",
+      "price": ".product-price",
+      "description": null,
+      "brand": null,
+      "category": null
+    }
+  }
+]
