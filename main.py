@@ -125,6 +125,8 @@ async def run(site_filter: str | None, limit: int) -> None:
 def show_stats() -> None:
     with Storage() as db:
         print(f"products stored: {db.count()}")
+        for source, n in db.count_by_source():
+            print(f"  {source:22} {n}")
 
 
 def main() -> None:

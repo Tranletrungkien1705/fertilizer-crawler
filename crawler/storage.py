@@ -202,3 +202,12 @@ class Storage:
                 cur.execute("SELECT COUNT(*) FROM products")
                 return cur.fetchone()[0]
         return self._conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
+
+    def count_by_source(self) -> list[tuple[str, int]]:
+        sql = ("SELECT source, COUNT(*) FROM products "
+               "GROUP BY source ORDER BY COUNT(*) DESC")
+        if self.is_pg:
+            with self._conn.cursor() as cur:
+                cur.execute(sql)
+                return list(cur.fetchall())
+        return list(self._conn.execute(sql))
