@@ -1,7 +1,29 @@
 # Fertilizer market crawler
 
-Collects publicly listed fertilizer products (name, price, NPK ratio, package
-size) from Vietnamese agriculture retailers into a database.
+Collects publicly listed products from Vietnamese agriculture retailers into a
+database — not just the price tag, but what the shop publishes about each
+product:
+
+| Column | Holds |
+|---|---|
+| `name`, `price`, `pack_kg`, `npk` | the comparable basics |
+| `images` | gallery photo URLs (JSON array) |
+| `videos` | YouTube / embedded demo videos (JSON array) |
+| `specs` | spec-table rows: origin, composition, packaging (JSON object) |
+| `sections` | the write-up split by heading (JSON object, see below) |
+| `content` | the whole description as plain text |
+
+`sections` is the agronomic substance, keyed consistently across shops:
+`thanh_phan` (composition), `cong_dung` (benefits), `huong_dan` (how to use),
+`lieu_luong` (dosage), `cong_nghe` (technology), `doi_tuong` (target crops),
+`bao_quan` (storage), `luu_y` (cautions).
+
+Headings are matched on vocabulary rather than CSS — every Vietnamese
+fertilizer listing says "Thành phần", "Công dụng", "Hướng dẫn sử dụng" — so
+one extractor serves Haravan, WooCommerce and the hand-rolled shops alike.
+
+Run `coverage.py` to see how much of this each shop actually yields, and
+`inspect_product.py` to read one product in full.
 
 Built to stay light: `httpx` + `selectolax`, no headless browser, no Docker.
 A full run holds well under 100 MB of RAM.
