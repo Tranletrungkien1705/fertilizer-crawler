@@ -97,11 +97,16 @@ Ok "pushed"
 
 # --- secret + data -----------------------------------------------------
 Step "Storing DATABASE_URL as a repository secret"
+# Passed with --body rather than piped: PowerShell writes to a native
+# program's stdin using the console encoding, which can prepend a BOM. The
+# secret then no longer starts with "postgresql://" and every CI run quietly
+# falls back to a local SQLite file.
+$dsn = $dsn.Trim()
 $ErrorActionPreference = "Continue"
-$dsn | & $gh secret set DATABASE_URL --repo "$user/$RepoName" 2>&1 | Out-Null
+& $gh secret set DATABASE_URL --body $dsn --repo "$user/$RepoName" 2>&1 | Out-Null
 $secretOk = ($LASTEXITCODE -eq 0)
 $ErrorActionPreference = "Stop"
-if ($secretOk) { Ok "secret set" } else { Bad "could not set the secret - add it by hand in Settings > Secrets" }
+if ($secretOk) { Ok "secret set ($($dsn.Length) chars)" } else { Bad "could not set the secret - add it by hand in Settings > Secrets" }
 
 Step "Copying the local catalogue into Neon"
 & .\.venv\Scripts\python.exe push_to_postgres.py

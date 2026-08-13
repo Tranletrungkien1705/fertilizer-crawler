@@ -100,8 +100,22 @@ MIGRATIONS = {"pack_kg": "REAL"}
 
 class Storage:
     def __init__(self, dsn: str | None = None) -> None:
-        self.dsn = dsn or os.getenv("DATABASE_URL") or ""
+        raw = dsn if dsn is not None else os.getenv("DATABASE_URL", "")
+        # A DSN arriving through a CI secret can carry a BOM, stray quotes or
+        # a trailing newline depending on how it was stored.
+        self.dsn = (raw or "").strip().strip('"').strip("'").lstrip("﻿")
         self.is_pg = self.dsn.startswith(("postgres://", "postgresql://"))
+
+        # Falling back to SQLite when a DATABASE_URL was clearly intended is
+        # how a scheduled run writes to a throwaway file on the CI machine and
+        # still reports success. Refuse instead.
+        if self.dsn and not self.is_pg:
+            raise SystemExit(
+                "DATABASE_URL is set but is not a Postgres connection string.\n"
+                f"  got: {self.dsn[:24]!r}... ({len(self.dsn)} chars)\n"
+                "Expected it to start with postgresql:// - check for stray "
+                "quotes, a BOM, or a truncated value."
+            )
         self._conn: Any = None
 
     def __enter__(self) -> "Storage":

@@ -41,9 +41,18 @@ jobs:
             echo "::error::DATABASE_URL secret is not set - add the Neon connection string in Settings > Secrets and variables > Actions"
             exit 1
           fi
-          python -c "from crawler.storage import Storage; \
-                     s=Storage(); s.__enter__(); \
-                     print('connected, rows before:', s.count()); s.__exit__()"
+          # Assert the run really reached Postgres. Without this, a malformed
+          # secret sends the whole crawl into a SQLite file on this runner,
+          # which is deleted when the job ends - and the job still passes.
+          python - <<'PY'
+          from crawler.storage import Storage
+          import sys
+          s = Storage()
+          if not s.is_pg:
+              sys.exit("::error::DATABASE_URL did not parse as Postgres")
+          with s as db:
+              print("connected to Postgres, rows before:", db.count())
+          PY
 
       - name: Crawl
         env:

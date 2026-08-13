@@ -92,6 +92,7 @@ async def run(site_filter: str | None, limit: int) -> None:
             raise SystemExit(f"No enabled site named {site_filter!r}")
 
     failed_sites: list[str] = []
+    per_site: dict[str, int] = {}
     total_saved = 0
 
     # Write after every shop rather than once at the end: a run across many
@@ -110,6 +111,7 @@ async def run(site_filter: str | None, limit: int) -> None:
 
                 saved = db.save_many(products)
                 total_saved += saved
+                per_site[name] = saved
                 log.info("[%s] saved %d rows; table now holds %d",
                          name, saved, db.count())
 
@@ -119,7 +121,29 @@ async def run(site_filter: str | None, limit: int) -> None:
 
         if failed_sites:
             log.warning("sites that errored: %s", ", ".join(failed_sites))
+
+        # Some shops serve an empty page to datacentre addresses while working
+        # fine from a home connection, so a run from CI can lose a site
+        # without anything looking wrong. Name them.
+        empty = [name for name, n in per_site.items() if n == 0]
+        if empty:
+            log.warning(
+                "sites that returned nothing: %s "
+                "(they may be refusing this network - try them locally)",
+                ", ".join(empty),
+            )
         log.info("saved %d rows total; table holds %d", total_saved, db.count())
+
+    # A run that collects nothing is a broken run, not an up-to-date one:
+    # selectors rot, and shops serve empty pages to datacentre addresses.
+    # Say so with an exit code, or a nightly job reports success forever
+    # while the data quietly goes stale.
+    if total_saved == 0:
+        raise SystemExit(
+            "no products were saved - every listing came back empty. "
+            "Check the selectors in sites.json, or whether the shops are "
+            "refusing this network."
+        )
 
 
 def show_stats() -> None:
