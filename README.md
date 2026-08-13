@@ -4,14 +4,26 @@ Collects publicly listed products from Vietnamese agriculture retailers into a
 database — not just the price tag, but what the shop publishes about each
 product:
 
-| Column | Holds |
-|---|---|
-| `name`, `price`, `pack_kg`, `npk` | the comparable basics |
-| `images` | gallery photo URLs (JSON array) |
-| `videos` | YouTube / embedded demo videos (JSON array) |
-| `specs` | spec-table rows: origin, composition, packaging (JSON object) |
-| `sections` | the write-up split by heading (JSON object, see below) |
-| `content` | the whole description as plain text |
+| Column | Holds | Source |
+|---|---|---|
+| `name`, `price`, `pack_kg`, `npk` | the comparable basics | page + API |
+| `images` | gallery photo URLs (JSON array) | API, else gallery selector |
+| `videos` | YouTube / embedded demo videos (JSON array) | page |
+| `specs` | spec-table rows: origin, composition, packaging (JSON) | page |
+| `sections` | the write-up split by heading (JSON, see below) | page |
+| `content` | the whole description as plain text | page |
+| `sku`, `brand`, `category`, `tags` | catalogue identity | API |
+| `price_min`, `price_max` | range for products sold in several sizes | API |
+| `in_stock`, `stock_qty` | availability and units on hand | API |
+| `variants` | per-variant title, SKU, price, stock (JSON) | API |
+| `rating`, `review_count`, `reviews` | customer feedback (JSON) | API |
+| `platform` | which rung supplied the data | — |
+
+"API" means the shop's own JSON, which most Vietnamese shops publish beside
+the page they render — see [ADAPTING.md](ADAPTING.md). It is fetched in
+preference to scraping because it is authoritative and identically shaped
+across every shop on that platform. No headless browser is involved, and none
+has been needed.
 
 `sections` is the agronomic substance, keyed consistently across shops:
 `thanh_phan` (composition), `cong_dung` (benefits), `huong_dan` (how to use),
