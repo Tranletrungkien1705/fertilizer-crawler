@@ -130,6 +130,24 @@ copy .env.example .env     # then paste the Neon connection string
 Neon suits this better than Supabase: Supabase pauses an idle free project
 after a week, which would silently break a scheduled crawl.
 
+## Shops that refuse the CI network
+
+Two shops — **vuonsaigon** and **cuahangvtnn** — return an empty listing to
+GitHub's runners while serving the real page to a home connection. Nothing is
+wrong with their selectors; they filter datacentre addresses.
+
+The crawl names them at the end of every run ("sites that returned nothing"),
+so this shows up instead of silently going stale. Refresh them from here:
+
+```powershell
+.\.venv\Scripts\python main.py --site vuonsaigon
+.\.venv\Scripts\python main.py --site cuahangvtnn
+```
+
+`freshness.py` is the honest check on all of this. Row counts cannot tell a
+working scheduled run from one that quietly wrote nowhere, because re-crawling
+upserts on the URL and leaves the total unchanged — the timestamps can.
+
 ## Running it off the laptop
 
 `.github/workflows/crawl.yml` runs the crawl daily on GitHub Actions (free tier:
