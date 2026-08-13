@@ -4,8 +4,17 @@ from __future__ import annotations
 import re
 from urllib.parse import urljoin, urlparse
 
+import json
+
 from selectolax.parser import HTMLParser
 
+from .rich import (
+    extract_content,
+    extract_images,
+    extract_sections,
+    extract_specs,
+    extract_videos,
+)
 from .storage import Product
 
 # "16-16-8", "20 - 20 - 15", "NPK 15:15:15", and en/em-dash variants that
@@ -131,6 +140,41 @@ def extract_links(html: str, base_url: str, selector: str) -> list[str]:
     return list(seen)
 
 
+# Tried in order when a site declares no "content" selector of its own.
+CONTENT_SELECTORS = [
+    "#tab-description",
+    ".woocommerce-Tabs-panel--description",
+    ".tab-content",
+    ".product-content",
+    ".product-description",
+    ".rte",
+    ".entry-content",
+    ".product-summary",
+]
+
+
+def _find_content(tree: HTMLParser, sel: dict):
+    declared = sel.get("content")
+    if declared:
+        return tree.css_first(declared)
+    best = None
+    best_len = 0
+    for candidate in CONTENT_SELECTORS:
+        node = tree.css_first(candidate)
+        if node is None:
+            continue
+        # Several of these exist on the same page and only one holds the
+        # write-up, so take the longest rather than the first that matches.
+        length = len(node.text(strip=True))
+        if length > best_len:
+            best, best_len = node, length
+    return best
+
+
+def _json_or_none(value) -> str | None:
+    return json.dumps(value, ensure_ascii=False) if value else None
+
+
 def extract_product(html: str, url: str, source: str, sel: dict) -> Product | None:
     """Build a Product from a detail page. Returns None when no name is found."""
     tree = HTMLParser(html)
@@ -145,7 +189,15 @@ def extract_product(html: str, url: str, source: str, sel: dict) -> Product | No
 
     price_text = pick("price")
     description = pick("description")
-    haystack = f"{name} {description}"
+
+    content_node = _find_content(tree, sel)
+    content = extract_content(content_node)
+    sections = extract_sections(content_node)
+    specs = extract_specs(tree)
+
+    # The agronomic text carries pack sizes and NPK ratios the short blurb
+    # leaves out, so let the parsers see it too.
+    haystack = " ".join(filter(None, [name, description, specs.get("quy_cach", "")]))
 
     return Product(
         source=source,
@@ -154,8 +206,13 @@ def extract_product(html: str, url: str, source: str, sel: dict) -> Product | No
         price=parse_price(price_text),
         unit=parse_unit(haystack),
         pack_kg=parse_pack_kg(name, description),
-        brand=pick("brand") or None,
+        brand=pick("brand") or specs.get("xuat_xu") or None,
         category=pick("category") or None,
-        npk=parse_npk(haystack),
+        npk=parse_npk(haystack) or parse_npk(specs.get("thanh_phan", "")),
         description=description[:2000] or None,
+        images=_json_or_none(extract_images(tree, url, sel.get("gallery"))),
+        videos=_json_or_none(extract_videos(tree, html)),
+        specs=_json_or_none(specs),
+        sections=_json_or_none(sections),
+        content=content or None,
     )

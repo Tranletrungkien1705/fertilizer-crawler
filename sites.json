@@ -19,7 +19,8 @@
       "price": ".price-box",
       "description": ".product-description",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".slider-for"
     }
   },
   {
@@ -38,7 +39,8 @@
       "price": "p.price",
       "description": ".woocommerce-product-details__short-description",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".woocommerce-product-gallery"
     }
   },
   {
@@ -63,7 +65,8 @@
       "price": ".product-price",
       "description": ".product-summary",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".product-image-block"
     }
   },
   {
@@ -116,7 +119,8 @@
       "price": "p.price",
       "description": ".woocommerce-product-details__short-description",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".woocommerce-product-gallery"
     }
   },
   {
@@ -135,7 +139,8 @@
       "price": ".product-price",
       "description": ".product-summary",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".woocommerce-product-gallery"
     }
   },
   {
@@ -156,7 +161,8 @@
       "price": ".product-price",
       "description": ".product-description",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".product-gallery"
     }
   },
   {
@@ -177,7 +183,8 @@
       "price": ".product-price",
       "description": ".product-description",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".product-gallery"
     }
   },
   {
@@ -198,7 +205,8 @@
       "price": "p.price",
       "description": ".product-summary",
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".woocommerce-product-gallery"
     }
   },
   {
@@ -219,7 +227,8 @@
       "price": ".product-price",
       "description": null,
       "brand": null,
-      "category": null
+      "category": null,
+      "gallery": ".woocommerce-product-gallery"
     }
   }
 ]

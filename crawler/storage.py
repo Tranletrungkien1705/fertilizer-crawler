@@ -34,6 +34,13 @@ class Product:
     category: str | None = None
     npk: str | None = None
     description: str | None = None
+    # The four below hold JSON, kept as text so one insert statement serves
+    # both SQLite and Postgres. Query them in Postgres with e.g. specs::jsonb.
+    images: str | None = None
+    videos: str | None = None
+    specs: str | None = None
+    sections: str | None = None
+    content: str | None = None
     crawled_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
@@ -63,6 +70,11 @@ CREATE TABLE IF NOT EXISTS products (
     category    TEXT,
     npk         TEXT,
     description TEXT,
+    images      TEXT,
+    videos      TEXT,
+    specs       TEXT,
+    sections    TEXT,
+    content     TEXT,
     crawled_at  TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_products_source ON products(source);
@@ -83,6 +95,11 @@ CREATE TABLE IF NOT EXISTS products (
     category    TEXT,
     npk         TEXT,
     description TEXT,
+    images      TEXT,
+    videos      TEXT,
+    specs       TEXT,
+    sections    TEXT,
+    content     TEXT,
     crawled_at  TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_products_source ON products(source);
@@ -91,11 +108,19 @@ CREATE INDEX IF NOT EXISTS idx_products_name   ON products(name);
 
 COLUMNS = [
     "source", "url", "name", "price", "currency",
-    "unit", "pack_kg", "brand", "category", "npk", "description", "crawled_at",
+    "unit", "pack_kg", "brand", "category", "npk", "description",
+    "images", "videos", "specs", "sections", "content", "crawled_at",
 ]
 
 # Columns added after the first release, for databases created before them.
-MIGRATIONS = {"pack_kg": "REAL"}
+MIGRATIONS = {
+    "pack_kg": "REAL",
+    "images": "TEXT",
+    "videos": "TEXT",
+    "specs": "TEXT",
+    "sections": "TEXT",
+    "content": "TEXT",
+}
 
 
 class Storage:
