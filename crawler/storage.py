@@ -41,6 +41,19 @@ class Product:
     specs: str | None = None
     sections: str | None = None
     content: str | None = None
+    # From the shop's own JSON where it offers one; left null when only the
+    # rendered page was available.
+    sku: str | None = None
+    price_min: float | None = None
+    price_max: float | None = None
+    in_stock: int | None = None
+    stock_qty: int | None = None
+    rating: float | None = None
+    review_count: int | None = None
+    tags: str | None = None
+    variants: str | None = None
+    reviews: str | None = None
+    platform: str | None = None
     crawled_at: str = field(
         default_factory=lambda: datetime.now(timezone.utc).isoformat(timespec="seconds")
     )
@@ -70,12 +83,23 @@ CREATE TABLE IF NOT EXISTS products (
     category    TEXT,
     npk         TEXT,
     description TEXT,
-    images      TEXT,
-    videos      TEXT,
-    specs       TEXT,
-    sections    TEXT,
-    content     TEXT,
-    crawled_at  TEXT NOT NULL
+    images       TEXT,
+    videos       TEXT,
+    specs        TEXT,
+    sections     TEXT,
+    content      TEXT,
+    sku          TEXT,
+    price_min    REAL,
+    price_max    REAL,
+    in_stock     INTEGER,
+    stock_qty    INTEGER,
+    rating       REAL,
+    review_count INTEGER,
+    tags         TEXT,
+    variants     TEXT,
+    reviews      TEXT,
+    platform     TEXT,
+    crawled_at   TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_products_source ON products(source);
 CREATE INDEX IF NOT EXISTS idx_products_name   ON products(name);
@@ -95,12 +119,23 @@ CREATE TABLE IF NOT EXISTS products (
     category    TEXT,
     npk         TEXT,
     description TEXT,
-    images      TEXT,
-    videos      TEXT,
-    specs       TEXT,
-    sections    TEXT,
-    content     TEXT,
-    crawled_at  TIMESTAMPTZ NOT NULL
+    images       TEXT,
+    videos       TEXT,
+    specs        TEXT,
+    sections     TEXT,
+    content      TEXT,
+    sku          TEXT,
+    price_min    DOUBLE PRECISION,
+    price_max    DOUBLE PRECISION,
+    in_stock     INTEGER,
+    stock_qty    INTEGER,
+    rating       DOUBLE PRECISION,
+    review_count INTEGER,
+    tags         TEXT,
+    variants     TEXT,
+    reviews      TEXT,
+    platform     TEXT,
+    crawled_at   TIMESTAMPTZ NOT NULL
 );
 CREATE INDEX IF NOT EXISTS idx_products_source ON products(source);
 CREATE INDEX IF NOT EXISTS idx_products_name   ON products(name);
@@ -109,7 +144,10 @@ CREATE INDEX IF NOT EXISTS idx_products_name   ON products(name);
 COLUMNS = [
     "source", "url", "name", "price", "currency",
     "unit", "pack_kg", "brand", "category", "npk", "description",
-    "images", "videos", "specs", "sections", "content", "crawled_at",
+    "images", "videos", "specs", "sections", "content",
+    "sku", "price_min", "price_max", "in_stock", "stock_qty",
+    "rating", "review_count", "tags", "variants", "reviews", "platform",
+    "crawled_at",
 ]
 
 # Columns added after the first release, for databases created before them.
@@ -120,6 +158,17 @@ MIGRATIONS = {
     "specs": "TEXT",
     "sections": "TEXT",
     "content": "TEXT",
+    "sku": "TEXT",
+    "price_min": "REAL",
+    "price_max": "REAL",
+    "in_stock": "INTEGER",
+    "stock_qty": "INTEGER",
+    "rating": "REAL",
+    "review_count": "INTEGER",
+    "tags": "TEXT",
+    "variants": "TEXT",
+    "reviews": "TEXT",
+    "platform": "TEXT",
 }
 
 

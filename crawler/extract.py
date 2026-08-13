@@ -175,6 +175,56 @@ def _json_or_none(value) -> str | None:
     return json.dumps(value, ensure_ascii=False) if value else None
 
 
+def merge_structured(product: Product, data: dict | None, platform: str,
+                     reviews: list | None = None) -> Product:
+    """Overlay the shop's own JSON onto what was read from the page.
+
+    The API wins on the facts it is authoritative about — price, SKU, stock,
+    vendor — because those come from the shop's database rather than from a
+    guess about which element holds the number. The page keeps the fields it
+    does better: the parsed NPK ratio, pack weight, and the write-up split
+    into sections.
+    """
+    product.platform = platform
+    if not data:
+        return product
+
+    if data.get("price"):
+        product.price = data["price"]
+    product.price_min = data.get("price_min")
+    product.price_max = data.get("price_max")
+    product.sku = data.get("sku")
+    product.brand = data.get("vendor") or product.brand
+    product.category = data.get("product_type") or product.category
+
+    in_stock = data.get("in_stock")
+    product.in_stock = None if in_stock is None else int(bool(in_stock))
+    product.stock_qty = data.get("stock_qty")
+    product.rating = data.get("rating")
+    product.review_count = data.get("review_count")
+
+    product.tags = _json_or_none(data.get("tags"))
+    product.variants = _json_or_none(data.get("variants"))
+    product.reviews = _json_or_none(reviews)
+
+    # Images from the API are the product's own, with no risk of sweeping up
+    # a neighbouring listing, so they replace rather than supplement.
+    api_images = [i for i in (data.get("images") or []) if i]
+    if api_images:
+        product.images = _json_or_none(api_images[:MAX_API_IMAGES])
+
+    # Re-parse the ratio and pack size once the API name is in hand: it is
+    # often cleaner than the heading the page renders.
+    if data.get("name"):
+        product.npk = product.npk or parse_npk(data["name"])
+        product.pack_kg = product.pack_kg or parse_pack_kg(data["name"], None)
+
+    return product
+
+
+MAX_API_IMAGES = 12
+
+
 def extract_product(html: str, url: str, source: str, sel: dict) -> Product | None:
     """Build a Product from a detail page. Returns None when no name is found."""
     tree = HTMLParser(html)

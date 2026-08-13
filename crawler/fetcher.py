@@ -164,3 +164,32 @@ class PoliteFetcher:
 
         self.stats.ok += 1
         return Page(resp.text, str(resp.url))
+
+    async def fetch_json(self, url: str):
+        """Fetch a JSON endpoint under the same courtesy rules as a page.
+
+        Returns None on anything unexpected: these endpoints are an
+        optimisation, and a shop that does not serve one is not an error.
+        """
+        parser = await self._robots_for(url)
+        if parser is not None and not parser.can_fetch(USER_AGENT, url):
+            self.stats.blocked_by_robots += 1
+            return None
+
+        host = urlparse(url).netloc
+        delay = self._effective_delay(url, parser)
+
+        async with self._sem:
+            await self._throttle(host, delay)
+            try:
+                resp = await self._client.get(url, headers={"Accept": "application/json"})
+            except httpx.HTTPError as exc:
+                log.debug("json fetch failed %s: %s", url, exc)
+                return None
+
+        if resp.status_code != 200 or "json" not in resp.headers.get("content-type", ""):
+            return None
+        try:
+            return resp.json()
+        except ValueError:
+            return None

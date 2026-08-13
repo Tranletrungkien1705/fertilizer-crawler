@@ -16,8 +16,19 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from crawler.extract import extract_links, extract_product
+from crawler.extract import extract_links, extract_product, merge_structured
 from crawler.fetcher import PoliteFetcher
+from crawler.platform import (
+    HARAVAN,
+    WOOCOMMERCE,
+    detect,
+    haravan_url,
+    parse_haravan,
+    parse_woo,
+    parse_woo_reviews,
+    woo_reviews_url,
+    woo_url,
+)
 from crawler.storage import Storage
 
 ROOT = Path(__file__).resolve().parent
@@ -40,9 +51,31 @@ def load_sites() -> list[dict]:
     return [s for s in sites if s.get("enabled", True)]
 
 
+async def fetch_structured(fetcher: PoliteFetcher, url: str, platform: str):
+    """Ask the shop's own API for this product. Returns (data, reviews)."""
+    if platform == HARAVAN:
+        payload = await fetcher.fetch_json(haravan_url(url))
+        if isinstance(payload, dict) and payload.get("variants") is not None:
+            return parse_haravan(payload, url), None
+
+    elif platform == WOOCOMMERCE:
+        payload = await fetcher.fetch_json(woo_url(url))
+        if isinstance(payload, list) and payload:
+            data = parse_woo(payload[0])
+            reviews = None
+            if data.get("review_count") and data.get("_id"):
+                raw = await fetcher.fetch_json(woo_reviews_url(url, data["_id"]))
+                reviews = parse_woo_reviews(raw) if isinstance(raw, list) else None
+            data.pop("_id", None)
+            return data, reviews
+
+    return None, None
+
+
 async def crawl_site(fetcher: PoliteFetcher, site: dict, limit: int) -> list:
     name = site["name"]
     products: list = []
+    platform: str | None = None
     # Collections overlap heavily, so the same product shows up in several
     # listings. Track final URLs to fetch each detail page only once.
     seen: set[str] = set()
@@ -74,12 +107,28 @@ async def crawl_site(fetcher: PoliteFetcher, site: dict, limit: int) -> list:
             seen.add(page.url)
 
             product = extract_product(page.html, page.url, name, site["selectors"])
-            if product:
-                products.append(product)
-                log.info("[%s] %s | %s", name, product.name[:60],
-                         f"{product.price:,.0f}d" if product.price else "no price")
-            else:
+            if not product:
                 log.debug("[%s] no product data at %s", name, page.url)
+                continue
+
+            if platform is None:
+                platform = site.get("platform") or detect(page.html)
+                log.info("[%s] platform: %s", name, platform)
+
+            data, reviews = await fetch_structured(fetcher, page.url, platform)
+            product = merge_structured(product, data, platform, reviews)
+
+            products.append(product)
+            extras = []
+            if product.sku:
+                extras.append(product.sku)
+            if product.stock_qty is not None:
+                extras.append(f"stock {product.stock_qty}")
+            if product.review_count:
+                extras.append(f"{product.review_count} reviews")
+            log.info("[%s] %s | %s%s", name, product.name[:52],
+                     f"{product.price:,.0f}d" if product.price else "no price",
+                     "  " + " ".join(extras) if extras else "")
 
     return products
 
