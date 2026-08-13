@@ -109,7 +109,16 @@ async def run(site_filter: str | None, limit: int) -> None:
                     failed_sites.append(name)
                     continue
 
-                saved = db.save_many(products)
+                # Saving is inside the guard too. A write that fails on the
+                # fourth shop used to abandon the five behind it, discarding
+                # work already fetched.
+                try:
+                    saved = db.save_many(products)
+                except Exception as exc:
+                    log.error("[%s] save failed: %s", name, exc)
+                    failed_sites.append(name)
+                    continue
+
                 total_saved += saved
                 per_site[name] = saved
                 log.info("[%s] saved %d rows; table now holds %d",

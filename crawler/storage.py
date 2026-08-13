@@ -198,6 +198,36 @@ class Storage:
                 cur.execute(statement)
         self._conn.commit()
 
+    def _reconnect(self) -> None:
+        """Reopen a dropped Postgres connection.
+
+        A crawl spends minutes fetching between writes, and a hosted database
+        is entitled to close a connection that has been idle that long. The
+        first write afterwards fails, which used to abandon every shop that
+        had not been crawled yet.
+        """
+        import psycopg
+
+        try:
+            self._conn.close()
+        except Exception:
+            pass
+        self._conn = psycopg.connect(self.dsn)
+        log.info("storage: reconnected to Postgres")
+
+    def _with_retry(self, action):
+        """Run a database call, once more on a fresh connection if it drops."""
+        if not self.is_pg:
+            return action()
+        import psycopg
+
+        try:
+            return action()
+        except (psycopg.OperationalError, psycopg.InterfaceError) as exc:
+            log.warning("database connection lost (%s), reconnecting", exc)
+            self._reconnect()
+            return action()
+
     def save_many(self, products: Iterable[Product]) -> int:
         rows = [tuple(asdict(p)[c] for c in COLUMNS) for p in products]
         if not rows:
@@ -222,8 +252,13 @@ class Storage:
                 f"INSERT INTO products ({cols}) VALUES ({ph}) "
                 f"ON CONFLICT (url) DO UPDATE SET {updates}"
             )
-            with self._conn.cursor() as cur:
-                cur.executemany(sql, rows)
+
+            def write() -> None:
+                with self._conn.cursor() as cur:
+                    cur.executemany(sql, rows)
+                self._conn.commit()
+
+            self._with_retry(write)
         else:
             ph = ", ".join(["?"] * len(COLUMNS))
             sql = (
@@ -231,22 +266,25 @@ class Storage:
                 f"ON CONFLICT(url) DO UPDATE SET {updates}"
             )
             self._conn.executemany(sql, rows)
+            self._conn.commit()
 
-        self._conn.commit()
         return len(rows)
 
-    def count(self) -> int:
-        if self.is_pg:
-            with self._conn.cursor() as cur:
-                cur.execute("SELECT COUNT(*) FROM products")
-                return cur.fetchone()[0]
-        return self._conn.execute("SELECT COUNT(*) FROM products").fetchone()[0]
-
-    def count_by_source(self) -> list[tuple[str, int]]:
-        sql = ("SELECT source, COUNT(*) FROM products "
-               "GROUP BY source ORDER BY COUNT(*) DESC")
-        if self.is_pg:
+    def _scalar(self, sql: str):
+        def run():
             with self._conn.cursor() as cur:
                 cur.execute(sql)
-                return list(cur.fetchall())
+                return cur.fetchall()
+
+        if self.is_pg:
+            return self._with_retry(run)
         return list(self._conn.execute(sql))
+
+    def count(self) -> int:
+        return self._scalar("SELECT COUNT(*) FROM products")[0][0]
+
+    def count_by_source(self) -> list[tuple[str, int]]:
+        return list(self._scalar(
+            "SELECT source, COUNT(*) FROM products "
+            "GROUP BY source ORDER BY COUNT(*) DESC"
+        ))
