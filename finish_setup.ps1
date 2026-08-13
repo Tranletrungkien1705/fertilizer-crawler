@@ -20,15 +20,30 @@ function Step($msg) { Write-Host "`n==> $msg" -ForegroundColor Cyan }
 function Ok($msg)   { Write-Host "    $msg" -ForegroundColor Green }
 function Bad($msg)  { Write-Host "    $msg" -ForegroundColor Red }
 
+# Windows PowerShell turns a native program's stderr into real errors, so any
+# gh command that chats on stderr - including successful ones, and the "not
+# found" probe below - would abort the script under ErrorActionPreference Stop.
+function Try-Gh {
+    param([Parameter(ValueFromRemainingArguments)] [string[]]$GhArgs)
+    $old = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & $script:gh @GhArgs 2>&1 | Out-String
+        return [pscustomobject]@{ Ok = ($LASTEXITCODE -eq 0); Output = $output }
+    } finally {
+        $ErrorActionPreference = $old
+    }
+}
+
 # --- preconditions -----------------------------------------------------
 Step "Checking GitHub login"
-& $gh auth status 2>&1 | Out-Null
-if ($LASTEXITCODE -ne 0) {
+if (-not (Try-Gh auth status).Ok) {
     Bad "Not logged in. Run this first, then re-run this script:"
     Bad "  & '$gh' auth login --web"
     exit 1
 }
-$user = (& $gh api user --jq .login)
+$whoami = Try-Gh api user --jq .login
+$user = $whoami.Output.Trim()
 Ok "logged in as $user"
 
 Step "Checking Neon connection string"
@@ -51,21 +66,28 @@ if ($LASTEXITCODE -ne 0) { Bad "connection failed - fix .env before continuing";
 # --- github repo -------------------------------------------------------
 Step "Creating the GitHub repository"
 $visibility = if ($Public) { "--public" } else { "--private" }
-$existing = & $gh repo view "$user/$RepoName" --json name 2>$null
-if ($LASTEXITCODE -eq 0) {
+if ((Try-Gh repo view "$user/$RepoName" --json name).Ok) {
     Ok "$user/$RepoName already exists - reusing it"
-    git remote remove origin 2>$null
+    Try-Gh repo set-default "$user/$RepoName" | Out-Null
+    git remote remove origin 2>&1 | Out-Null
     git remote add origin "https://github.com/$user/$RepoName.git"
 } else {
-    & $gh repo create $RepoName $visibility --source=. --remote=origin
-    if ($LASTEXITCODE -ne 0) { Bad "could not create the repository"; exit 1 }
+    $created = Try-Gh repo create $RepoName $visibility --source=. --remote=origin
+    if (-not $created.Ok) {
+        Bad "could not create the repository:"
+        Bad $created.Output.Trim()
+        exit 1
+    }
     Ok "created $user/$RepoName"
 }
 
 Step "Pushing the code"
 git branch -M main
-git push -u origin main
-if ($LASTEXITCODE -ne 0) {
+$ErrorActionPreference = "Continue"
+git push -u origin main 2>&1 | Write-Host
+$pushed = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = "Stop"
+if (-not $pushed) {
     Bad "push failed. github.com:443 is intermittently blocked on Vietnamese"
     Bad "ISPs - retry, or switch the remote to SSH which stays reachable:"
     Bad "  git remote set-url origin git@github.com:$user/$RepoName.git"
@@ -75,19 +97,23 @@ Ok "pushed"
 
 # --- secret + data -----------------------------------------------------
 Step "Storing DATABASE_URL as a repository secret"
-$dsn | & $gh secret set DATABASE_URL --repo "$user/$RepoName"
-Ok "secret set"
+$ErrorActionPreference = "Continue"
+$dsn | & $gh secret set DATABASE_URL --repo "$user/$RepoName" 2>&1 | Out-Null
+$secretOk = ($LASTEXITCODE -eq 0)
+$ErrorActionPreference = "Stop"
+if ($secretOk) { Ok "secret set" } else { Bad "could not set the secret - add it by hand in Settings > Secrets" }
 
 Step "Copying the local catalogue into Neon"
 & .\.venv\Scripts\python.exe push_to_postgres.py
 
 Step "Triggering the workflow now"
-& $gh workflow run crawl.yml --repo "$user/$RepoName" -f limit=20
-if ($LASTEXITCODE -eq 0) {
+$run = Try-Gh workflow run crawl.yml --repo "$user/$RepoName" -f limit=20
+if ($run.Ok) {
     Ok "started - watch it with:"
     Ok "  & '$gh' run watch --repo $user/$RepoName"
 } else {
-    Bad "could not trigger it; run it by hand from the Actions tab"
+    Bad "could not trigger it yet (GitHub needs a moment to register a new"
+    Bad "workflow file); run it from the Actions tab, or retry this script."
 }
 
 Write-Host "`nDone. Repository: https://github.com/$user/$RepoName" -ForegroundColor Green
