@@ -70,4 +70,10 @@ jobs:
             echo '```'
             python main.py --stats
             echo '```'
+            echo ""
+            echo "### Price and stock movement"
+            echo '```'
+            python history.py --size
+            python history.py --days 2
+            echo '```'
           } >> "$GITHUB_STEP_SUMMARY"

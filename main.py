@@ -12,6 +12,7 @@ import argparse
 import asyncio
 import json
 import logging
+import sys
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -20,6 +21,8 @@ from crawler.extract import extract_links, extract_product, merge_structured
 from crawler.fetcher import PoliteFetcher
 from crawler.platform import (
     HARAVAN,
+    PRICE_MINOR,
+    SAPO,
     WOOCOMMERCE,
     detect,
     haravan_url,
@@ -33,6 +36,11 @@ from crawler.storage import Storage
 
 ROOT = Path(__file__).resolve().parent
 SITES_FILE = ROOT / "sites.json"
+
+# Product names are Vietnamese; the Windows console defaults to cp1252 and
+# mangles them in the log.
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+sys.stderr.reconfigure(encoding="utf-8", errors="replace")
 
 load_dotenv(ROOT / ".env")
 
@@ -53,10 +61,11 @@ def load_sites() -> list[dict]:
 
 async def fetch_structured(fetcher: PoliteFetcher, url: str, platform: str):
     """Ask the shop's own API for this product. Returns (data, reviews)."""
-    if platform == HARAVAN:
+    if platform in (HARAVAN, SAPO):
         payload = await fetcher.fetch_json(haravan_url(url))
         if isinstance(payload, dict) and payload.get("variants") is not None:
-            return parse_haravan(payload, url), None
+            # Same endpoint, different money scale - see PRICE_MINOR.
+            return parse_haravan(payload, url, PRICE_MINOR[platform]), None
 
     elif platform == WOOCOMMERCE:
         payload = await fetcher.fetch_json(woo_url(url))
@@ -143,6 +152,7 @@ async def run(site_filter: str | None, limit: int) -> None:
     failed_sites: list[str] = []
     per_site: dict[str, int] = {}
     total_saved = 0
+    total_moved = 0
 
     # Write after every shop rather than once at the end: a run across many
     # sites takes a while, and results should be queryable as they land
@@ -162,11 +172,18 @@ async def run(site_filter: str | None, limit: int) -> None:
                 # fourth shop used to abandon the five behind it, discarding
                 # work already fetched.
                 try:
+                    # Before the upsert, while the table still holds the
+                    # previous prices to compare against.
+                    moved = db.record_history(products)
                     saved = db.save_many(products)
                 except Exception as exc:
                     log.error("[%s] save failed: %s", name, exc)
                     failed_sites.append(name)
                     continue
+
+                total_moved += moved
+                if moved:
+                    log.info("[%s] %d price/stock changes recorded", name, moved)
 
                 total_saved += saved
                 per_site[name] = saved
@@ -191,6 +208,7 @@ async def run(site_filter: str | None, limit: int) -> None:
                 ", ".join(empty),
             )
         log.info("saved %d rows total; table holds %d", total_saved, db.count())
+        log.info("%d price/stock changes appended to history", total_moved)
 
     # A run that collects nothing is a broken run, not an up-to-date one:
     # selectors rot, and shops serve empty pages to datacentre addresses.

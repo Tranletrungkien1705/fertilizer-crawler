@@ -103,6 +103,20 @@ CREATE TABLE IF NOT EXISTS products (
 );
 CREATE INDEX IF NOT EXISTS idx_products_source ON products(source);
 CREATE INDEX IF NOT EXISTS idx_products_name   ON products(name);
+
+CREATE TABLE IF NOT EXISTS price_history (
+    id          INTEGER PRIMARY KEY AUTOINCREMENT,
+    url         TEXT NOT NULL,
+    source      TEXT NOT NULL,
+    price       REAL,
+    price_min   REAL,
+    price_max   REAL,
+    in_stock    INTEGER,
+    stock_qty   INTEGER,
+    observed_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_history_url ON price_history(url, observed_at);
+CREATE INDEX IF NOT EXISTS idx_history_at  ON price_history(observed_at);
 """
 
 SCHEMA_PG = """
@@ -139,7 +153,26 @@ CREATE TABLE IF NOT EXISTS products (
 );
 CREATE INDEX IF NOT EXISTS idx_products_source ON products(source);
 CREATE INDEX IF NOT EXISTS idx_products_name   ON products(name);
+
+CREATE TABLE IF NOT EXISTS price_history (
+    id          BIGSERIAL PRIMARY KEY,
+    url         TEXT NOT NULL,
+    source      TEXT NOT NULL,
+    price       DOUBLE PRECISION,
+    price_min   DOUBLE PRECISION,
+    price_max   DOUBLE PRECISION,
+    in_stock    INTEGER,
+    stock_qty   INTEGER,
+    observed_at TIMESTAMPTZ NOT NULL
+);
+CREATE INDEX IF NOT EXISTS idx_history_url ON price_history(url, observed_at);
+CREATE INDEX IF NOT EXISTS idx_history_at  ON price_history(observed_at);
 """
+
+HISTORY_COLUMNS = [
+    "url", "source", "price", "price_min", "price_max",
+    "in_stock", "stock_qty", "observed_at",
+]
 
 COLUMNS = [
     "source", "url", "name", "price", "currency",
@@ -276,6 +309,100 @@ class Storage:
             log.warning("database connection lost (%s), reconnecting", exc)
             self._reconnect()
             return action()
+
+    def record_history(self, products: Iterable[Product]) -> int:
+        """Append a row for every product whose price or stock moved.
+
+        Must run before save_many, while the products table still holds the
+        previous observation to compare against.
+
+        Only changes are appended. Writing all 800 products on every nightly
+        run would fill the free tier inside a year with rows that all say the
+        same thing, and a chart drawn from it would look identical either way.
+        """
+        products = list(products)
+        if not products:
+            return 0
+
+        by_url = {p.url: p for p in products}
+        previous = self._previous_observations(list(by_url))
+
+        rows = []
+        suspicious = 0
+        for url, product in by_url.items():
+            before = previous.get(url)
+            now = (product.price, product.in_stock, product.stock_qty)
+            if before is not None and before == now:
+                continue
+
+            # A genuine price move is a few percent. An order of magnitude
+            # means a parsing change, a currency-scale mistake or a broken
+            # page - and once written it looks exactly like real movement in
+            # every chart drawn afterwards. Record it, but say so.
+            old_price = before[0] if before else None
+            if old_price and product.price:
+                ratio = max(product.price / old_price, old_price / product.price)
+                if ratio >= 20:
+                    suspicious += 1
+                    log.warning(
+                        "implausible price change %.0fx on %s: %s -> %s",
+                        ratio, url, old_price, product.price)
+            observed = (_as_datetime(product.crawled_at) if self.is_pg
+                        else product.crawled_at)
+            rows.append((
+                url, product.source, product.price,
+                product.price_min, product.price_max,
+                product.in_stock, product.stock_qty, observed,
+            ))
+
+        if suspicious:
+            log.warning("%d of %d recorded changes look implausible - check the "
+                        "price scale for this shop before trusting the history",
+                        suspicious, len(rows))
+
+        if not rows:
+            return 0
+
+        cols = ", ".join(HISTORY_COLUMNS)
+        ph = ", ".join(["%s" if self.is_pg else "?"] * len(HISTORY_COLUMNS))
+        sql = f"INSERT INTO price_history ({cols}) VALUES ({ph})"
+
+        def write() -> None:
+            if self.is_pg:
+                with self._conn.cursor() as cur:
+                    cur.executemany(sql, rows)
+            else:
+                self._conn.executemany(sql, rows)
+            self._conn.commit()
+
+        self._with_retry(write)
+        return len(rows)
+
+    def _previous_observations(self, urls: list[str]) -> dict[str, tuple]:
+        """Last stored price and stock per URL, for the batch about to save."""
+        if not urls:
+            return {}
+
+        # Chunked so the statement stays within parameter limits on a large
+        # shop, and so one oversized listing cannot fail the whole batch.
+        out: dict[str, tuple] = {}
+        chunk = 200
+        for start in range(0, len(urls), chunk):
+            part = urls[start:start + chunk]
+            marks = ", ".join(["%s" if self.is_pg else "?"] * len(part))
+            sql = (f"SELECT url, price, in_stock, stock_qty FROM products "
+                   f"WHERE url IN ({marks})")
+
+            def read(sql=sql, part=part):
+                if self.is_pg:
+                    with self._conn.cursor() as cur:
+                        cur.execute(sql, part)
+                        return cur.fetchall()
+                return list(self._conn.execute(sql, part))
+
+            for url, price, in_stock, stock_qty in self._with_retry(read):
+                out[url] = (price, in_stock, stock_qty)
+        return out
 
     def save_many(self, products: Iterable[Product]) -> int:
         rows = [tuple(asdict(p)[c] for c in COLUMNS) for p in products]

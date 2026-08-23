@@ -20,18 +20,25 @@ from urllib.parse import urljoin, urlparse
 log = logging.getLogger(__name__)
 
 HARAVAN = "haravan"      # also Shopify: same product .js contract
+SAPO = "sapo"            # same .js contract, but prices are not minor units
 WOOCOMMERCE = "woocommerce"
 JSONLD = "jsonld"
 HTML = "html"
 
 # Haravan and Shopify quote money in minor units regardless of currency, so a
-# VND price arrives multiplied by 100.
-HARAVAN_MINOR = 100
+# VND price arrives multiplied by 100. Sapo serves the same endpoint shape but
+# quotes plain VND, and treating the two alike divides its prices by a hundred
+# — 126.000 becomes 1.260 and every comparison built on it is wrong.
+PRICE_MINOR = {HARAVAN: 100, SAPO: 1}
 
 
 def detect(html: str) -> str:
     """Guess the platform from fingerprints in the page."""
-    if re.search(r"haravan|hstatic\.net|bizweb\.dktcdn", html, re.I):
+    # Sapo first: it also answers on /<handle>.js, so a looser Haravan test
+    # would swallow it.
+    if re.search(r"bizweb\.dktcdn|sapo\.vn|sapoapp", html, re.I):
+        return SAPO
+    if re.search(r"haravan|hstatic\.net", html, re.I):
         return HARAVAN
     if re.search(r"cdn\.shopify\.com|shopify\.theme", html, re.I):
         return HARAVAN
@@ -67,7 +74,7 @@ def haravan_url(product_url: str) -> str:
     return product_url.split("?")[0].rstrip("/") + ".js"
 
 
-def parse_haravan(payload: dict, base_url: str) -> dict:
+def parse_haravan(payload: dict, base_url: str, minor: int = 100) -> dict:
     variants = []
     stock = 0
     counted = False
@@ -81,8 +88,8 @@ def parse_haravan(payload: dict, base_url: str) -> dict:
         variants.append({
             "title": v.get("title"),
             "sku": v.get("sku") or None,
-            "price": _money(v.get("price"), HARAVAN_MINOR),
-            "compare_at": _money(v.get("compare_at_price"), HARAVAN_MINOR),
+            "price": _money(v.get("price"), minor),
+            "compare_at": _money(v.get("compare_at_price"), minor),
             "available": v.get("available"),
             "stock": qty,
         })
@@ -94,9 +101,9 @@ def parse_haravan(payload: dict, base_url: str) -> dict:
 
     return {
         "name": _clean(payload.get("title")),
-        "price": _money(payload.get("price"), HARAVAN_MINOR),
-        "price_min": _money(payload.get("price_min"), HARAVAN_MINOR),
-        "price_max": _money(payload.get("price_max"), HARAVAN_MINOR),
+        "price": _money(payload.get("price"), minor),
+        "price_min": _money(payload.get("price_min"), minor),
+        "price_max": _money(payload.get("price_max"), minor),
         "sku": first_sku,
         "vendor": _clean(payload.get("vendor")),
         "product_type": _clean(payload.get("type")),

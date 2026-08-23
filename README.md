@@ -64,6 +64,25 @@ Results land in `data/fertilizer.db` (SQLite) unless `DATABASE_URL` is set.
 Parsing rules change more often than the pages do, so reach for it instead of
 re-crawling — it is instant and costs the sites nothing.
 
+## Price and stock history
+
+Every crawl appends to `price_history` — but only for products whose price or
+stock actually moved. Writing all 800 rows nightly would fill the free tier
+inside a year with rows that all say the same thing, and a chart drawn from it
+would look identical either way.
+
+```powershell
+.\.venv\Scripts\python history.py            # what changed in the last week
+.\.venv\Scripts\python history.py --movers   # biggest moves, cheapest first
+.\.venv\Scripts\python history.py --url <url>  # the full series for one product
+.\.venv\Scripts\python history.py --size     # what the table is costing
+```
+
+A change of an order of magnitude is logged as implausible rather than
+accepted quietly. Real prices move a few percent; a hundredfold jump means a
+parsing change or a currency-scale mistake, and once written it is
+indistinguishable from real movement in every chart afterwards.
+
 ## Comparing prices
 
 Retailers sell the same fertilizer in a 1 kg consumer pouch and a 50 kg sack,
