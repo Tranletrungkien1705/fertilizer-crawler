@@ -1,0 +1,478 @@
+<title>Giá vật tư nông nghiệp</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap">
+
+<style>
+:root {
+  color-scheme: light;
+  --plane:      #f1f2ee;
+  --surface:    #fcfcfb;
+  --surface-2:  #f6f6f3;
+  --line:       #e1e2da;
+  --rule:       #c8c9be;
+  --ink:        #0b0b0b;
+  --ink-2:      #52514e;
+  --ink-3:      #7d7d74;
+  --data:       #2a78d6;
+  --data-soft:  #cde2fb;
+  --alt:        #eb6834;
+  --good:       #0ca30c;
+  --shadow:     0 1px 2px rgba(11,11,11,.05), 0 8px 24px -18px rgba(11,11,11,.4);
+}
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+    --plane:     #0d0d0d;
+    --surface:   #1a1a19;
+    --surface-2: #212120;
+    --line:      #2c2c2a;
+    --rule:      #45453f;
+    --ink:       #ffffff;
+    --ink-2:     #c3c2b7;
+    --ink-3:     #8e8d84;
+    --data:      #3987e5;
+    --data-soft: #184f95;
+    --alt:       #d95926;
+    --good:      #0ca30c;
+    --shadow:    0 1px 2px rgba(0,0,0,.5), 0 10px 30px -20px rgba(0,0,0,.9);
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --plane:     #0d0d0d;
+  --surface:   #1a1a19;
+  --surface-2: #212120;
+  --line:      #2c2c2a;
+  --rule:      #45453f;
+  --ink:       #ffffff;
+  --ink-2:     #c3c2b7;
+  --ink-3:     #8e8d84;
+  --data:      #3987e5;
+  --data-soft: #184f95;
+  --alt:       #d95926;
+  --good:      #0ca30c;
+  --shadow:    0 1px 2px rgba(0,0,0,.5), 0 10px 30px -20px rgba(0,0,0,.9);
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--plane);
+  color: var(--ink);
+  font: 400 15px/1.6 "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.wrap { max-width: 1060px; margin: 0 auto; padding: 34px 20px 72px; }
+
+.masthead { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px 16px; }
+h1 {
+  font: 700 27px/1.15 Archivo, system-ui, sans-serif;
+  letter-spacing: -.017em; margin: 0; text-wrap: balance;
+}
+.stamp {
+  font: 500 11px/1 "IBM Plex Mono", monospace; letter-spacing: .07em;
+  text-transform: uppercase; color: var(--ink-3);
+  border: 1px solid var(--line); border-radius: 3px; padding: 5px 8px;
+}
+.lede { color: var(--ink-2); max-width: 66ch; margin: 10px 0 26px; }
+
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 12px; margin-bottom: 30px; }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 5px; padding: 15px 16px 14px; box-shadow: var(--shadow); }
+.stat dt {
+  font: 500 10.5px/1.3 "IBM Plex Mono", monospace; letter-spacing: .08em;
+  text-transform: uppercase; color: var(--ink-3); margin: 0 0 7px;
+}
+.stat dd {
+  margin: 0; font: 600 25px/1 Archivo, sans-serif;
+  font-variant-numeric: tabular-nums; letter-spacing: -.02em;
+}
+.stat .sub { display: block; margin-top: 6px; font: 400 12px/1.4 "IBM Plex Sans", sans-serif; color: var(--ink-3); }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 6px; padding: 22px 22px 18px; margin-bottom: 22px; box-shadow: var(--shadow); }
+h2 { font: 600 17px/1.25 Archivo, sans-serif; letter-spacing: -.01em; margin: 0; }
+.note { color: var(--ink-2); font-size: 13.5px; margin: 8px 0 18px; max-width: 74ch; }
+.note strong { font-weight: 500; color: var(--ink); }
+
+.scroller { overflow-x: auto; }
+svg { display: block; }
+svg text { font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+.axis { font-size: 10.5px; fill: var(--ink-3); }
+.rowlabel { font-family: "IBM Plex Sans", sans-serif; font-size: 12.5px; fill: var(--ink); }
+.sublabel { font-size: 10.5px; fill: var(--ink-3); }
+.value { font-size: 11.5px; fill: var(--ink-2); }
+.grid { stroke: var(--line); stroke-width: 1; }
+.baseline { stroke: var(--rule); stroke-width: 1; }
+.hit { fill: transparent; }
+
+.empty { border: 1px dashed var(--rule); border-radius: 5px; padding: 20px; background: var(--surface-2); margin-bottom: 18px; }
+.empty h3 { font: 600 14px/1.3 Archivo, sans-serif; margin: 0 0 8px; }
+.empty p { margin: 0 0 12px; color: var(--ink-2); font-size: 13.5px; max-width: 70ch; }
+.empty p:last-child { margin-bottom: 0; }
+.empty b { font-family: "IBM Plex Mono", monospace; font-weight: 500; color: var(--ink); }
+.pill { display: inline-flex; align-items: center; gap: 7px; font: 500 11px/1 "IBM Plex Mono", monospace; letter-spacing: .06em; text-transform: uppercase; padding: 6px 10px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--good); }
+
+details { margin-top: 16px; border-top: 1px solid var(--line); padding-top: 14px; }
+summary { cursor: pointer; font: 500 12.5px/1 "IBM Plex Sans", sans-serif; color: var(--ink-2); }
+summary:focus-visible { outline: 2px solid var(--data); outline-offset: 3px; border-radius: 3px; }
+table { border-collapse: collapse; width: 100%; margin-top: 14px; font-size: 13px; }
+th, td { text-align: left; padding: 7px 10px 7px 0; border-bottom: 1px solid var(--line); }
+th { font: 500 10.5px/1.3 "IBM Plex Mono", monospace; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-3); }
+td.num { text-align: right; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; padding-right: 0; }
+tbody tr:hover { background: var(--surface-2); }
+
+#tip {
+  position: fixed; pointer-events: none; opacity: 0; transition: opacity .1s;
+  background: var(--ink); color: var(--surface); padding: 7px 10px; border-radius: 4px;
+  font: 400 12px/1.45 "IBM Plex Sans", sans-serif; max-width: 270px; z-index: 20;
+  box-shadow: 0 6px 20px -8px rgba(0,0,0,.5);
+}
+#tip b { font-weight: 500; font-family: "IBM Plex Mono", monospace; font-variant-numeric: tabular-nums; }
+footer { color: var(--ink-3); font-size: 12.5px; margin-top: 30px; line-height: 1.75; max-width: 78ch; }
+footer code { font-family: "IBM Plex Mono", monospace; font-size: 11.5px; background: var(--surface); border: 1px solid var(--line); border-radius: 3px; padding: 1px 5px; }
+@media (prefers-reduced-motion: reduce) { * { transition: none !important; } }
+</style>
+
+<div class="wrap">
+  <div class="masthead">
+    <h1>Giá vật tư nông nghiệp</h1>
+    <span class="stamp" id="stamp">&mdash;</span>
+  </div>
+  <p class="lede">
+    Theo dõi giá công khai của <span id="shopcount">&mdash;</span> cửa hàng vật tư nông nghiệp Việt Nam.
+    Thu thập tự động mỗi đêm; giá và tồn kho chỉ được ghi lại khi thực sự thay đổi.
+  </p>
+
+  <dl class="stats" id="stats"></dl>
+
+  <section class="panel">
+    <h2>Biến động giá theo thời gian</h2>
+    <div id="trend"></div>
+  </section>
+
+  <section class="panel">
+    <h2>Cùng công thức NPK, khác cửa hàng</h2>
+    <p class="note">
+      So sánh duy nhất đáng tin: cùng tỉ lệ dinh dưỡng, quy về <strong>đồng mỗi kilogram</strong>
+      để bao 50&nbsp;kg và gói 1&nbsp;kg đặt cạnh nhau được.
+      Chấm <strong style="color:var(--alt)">cam</strong> là nơi bán rẻ nhất.
+    </p>
+    <div class="scroller"><div id="npk"></div></div>
+    <details>
+      <summary>Xem dạng bảng</summary>
+      <div class="scroller"><table id="npktable"></table></div>
+    </details>
+  </section>
+
+  <section class="panel">
+    <h2>Đơn giá theo cửa hàng</h2>
+    <p class="note" id="shopnote"></p>
+    <div class="scroller"><div id="shops"></div></div>
+    <details>
+      <summary>Xem dạng bảng</summary>
+      <div class="scroller"><table id="shoptable"></table></div>
+    </details>
+  </section>
+
+  <footer id="foot"></footer>
+</div>
+<div id="tip" role="status" aria-live="polite"></div>
+
+<script id="payload" type="application/json">__DATA__</script>
+<script>
+(function () {
+  var D = JSON.parse(document.getElementById("payload").textContent);
+  var NS = "http://www.w3.org/2000/svg";
+  var tip = document.getElementById("tip");
+
+  function vnd(n) { return new Intl.NumberFormat("vi-VN").format(Math.round(n)) + "đ"; }
+  function num(n) { return new Intl.NumberFormat("vi-VN").format(n); }
+  function dmy(iso) { return iso.slice(0, 10).split("-").reverse().join("/"); }
+  function el(t, a, kids) {
+    var n = document.createElementNS(NS, t), k;
+    for (k in (a || {})) n.setAttribute(k, a[k]);
+    (kids || []).forEach(function (c) { n.appendChild(c); });
+    return n;
+  }
+  function txt(s) { return document.createTextNode(s); }
+
+  function hover(node, html) {
+    node.addEventListener("mousemove", function (e) {
+      tip.innerHTML = html;
+      tip.style.opacity = 1;
+      var pad = 14, w = tip.offsetWidth, h = tip.offsetHeight;
+      var x = e.clientX + pad, y = e.clientY - h - 10;
+      if (x + w > window.innerWidth - 8) x = e.clientX - w - pad;
+      if (y < 8) y = e.clientY + pad;
+      tip.style.left = x + "px";
+      tip.style.top = y + "px";
+    });
+    node.addEventListener("mouseleave", function () { tip.style.opacity = 0; });
+  }
+
+  document.getElementById("stamp").textContent = "cập nhật " + dmy(D.generated);
+  document.getElementById("shopcount").textContent = D.totals.shops;
+
+  var stats = [
+    ["Sản phẩm", num(D.totals.products), num(D.totals.priced) + " có giá công khai"],
+    ["Cửa hàng", D.totals.shops, "8 đọc qua API riêng của shop"],
+    ["Đang theo dõi giá", num(D.history.tracked), num(D.history.rows) + " mốc đã ghi"],
+    ["Số ngày dữ liệu", D.history.days,
+      D.history.days < 3 ? "cần thêm ngày để dựng xu hướng" : "đủ để dựng xu hướng"]
+  ];
+  document.getElementById("stats").innerHTML = stats.map(function (s) {
+    return '<div class="stat"><dt>' + s[0] + '</dt><dd>' + s[1] +
+           '<span class="sub">' + s[2] + '</span></dd></div>';
+  }).join("");
+
+  /* ---------- trend ---------- */
+  var trend = document.getElementById("trend");
+  if (D.history.moved === 0) {
+    trend.innerHTML =
+      '<div class="empty">' +
+        '<h3>Chưa sản phẩm nào đổi giá</h3>' +
+        '<p>Lịch sử bắt đầu ngày <b>' + dmy(D.history.first) + '</b>, hiện có <b>' +
+          num(D.history.rows) + '</b> mốc quan sát của <b>' + num(D.history.tracked) +
+          '</b> sản phẩm &mdash; nhưng tất cả đều là lần ghi đầu tiên. Đường xu hướng cần ' +
+          'ít nhất hai mức giá khác nhau của cùng một sản phẩm, nên khung này sẽ tự có ' +
+          'nội dung sau vài đêm nữa.</p>' +
+        '<p>Đây là trạng thái đúng chứ không phải lỗi: mỗi đêm chỉ ghi những sản phẩm ' +
+          'thực sự đổi giá hoặc đổi tồn kho, nên một ngày thị trường đứng yên không sinh ' +
+          'ra dữ liệu nào.</p>' +
+        '<p><span class="pill"><span class="dot"></span> thu thập 05:00 hằng ngày</span></p>' +
+      '</div>';
+    trend.appendChild(dailyBars(D.by_day));
+  } else {
+    trend.appendChild(trendLines(D.series));
+  }
+
+  function dailyBars(days) {
+    var w = 660, rowH = 26, padL = 74, padR = 150;
+    var h = days.length * rowH + 40;
+    var max = Math.max.apply(null, days.map(function (d) { return d.n; }).concat([1]));
+    var svg = el("svg", { viewBox: "0 0 " + w + " " + h, width: "100%", height: h,
+      role: "img", "aria-label": "Số mốc quan sát tích lũy mỗi ngày" });
+    svg.appendChild(el("text", { x: 0, y: 12, class: "sublabel" },
+      [txt("MỐC QUAN SÁT ĐÃ TÍCH LŨY")]));
+
+    days.forEach(function (d, i) {
+      var y = 28 + i * rowH;
+      var bw = (w - padL - padR) * d.n / max;
+      svg.appendChild(el("text", { x: 0, y: y + 12, class: "value" },
+        [txt(d.day.slice(5).split("-").reverse().join("/"))]));
+      var r = el("rect", { x: padL, y: y + 2, width: Math.max(bw, 2), height: 13,
+        rx: 3, fill: "var(--data)" });
+      svg.appendChild(r);
+      svg.appendChild(el("text", { x: padL + Math.max(bw, 2) + 9, y: y + 12, class: "value" },
+        [txt(num(d.n) + " mốc · " + d.shops + " cửa hàng")]));
+      hover(r, "<b>" + num(d.n) + "</b> mốc quan sát<br>" + d.shops + " cửa hàng");
+    });
+    return svg;
+  }
+
+  function trendLines(series) {
+    var byUrl = {};
+    series.forEach(function (p) {
+      if (!byUrl[p.url]) byUrl[p.url] = { name: p.name, shop: p.shop, pts: [] };
+      byUrl[p.url].pts.push(p);
+    });
+    var moving = Object.keys(byUrl).map(function (k) { return byUrl[k]; })
+      .filter(function (v) {
+        var seen = {};
+        v.pts.forEach(function (p) { seen[p.price] = 1; });
+        return Object.keys(seen).length > 1;
+      })
+      .map(function (v) {
+        var first = v.pts[0].price, last = v.pts[v.pts.length - 1].price;
+        v.pct = (last - first) / first * 100;
+        return v;
+      })
+      .sort(function (a, b) { return Math.abs(b.pct) - Math.abs(a.pct); })
+      .slice(0, 8);
+
+    var days = [];
+    series.forEach(function (p) { if (days.indexOf(p.day) < 0) days.push(p.day); });
+    days.sort();
+
+    var w = 680, h = 310, padL = 74, padR = 150, padT = 18, padB = 30;
+    var all = [];
+    moving.forEach(function (m) { m.pts.forEach(function (p) { all.push(p.price); }); });
+    var lo = Math.min.apply(null, all) * 0.95, hi = Math.max.apply(null, all) * 1.05;
+    function X(d) { return padL + (w - padL - padR) * (days.indexOf(d) / Math.max(days.length - 1, 1)); }
+    function Y(v) { return padT + (h - padT - padB) * (1 - (v - lo) / (hi - lo || 1)); }
+
+    var svg = el("svg", { viewBox: "0 0 " + w + " " + h, width: "100%", height: h,
+      role: "img", "aria-label": "Biến động giá theo thời gian" });
+
+    for (var i = 0; i <= 3; i++) {
+      var v = lo + (hi - lo) * i / 3;
+      svg.appendChild(el("line", { x1: padL, x2: w - padR, y1: Y(v), y2: Y(v), class: "grid" }));
+      svg.appendChild(el("text", { x: padL - 8, y: Y(v) + 4, class: "axis", "text-anchor": "end" },
+        [txt(vnd(v))]));
+    }
+    days.forEach(function (d) {
+      svg.appendChild(el("text", { x: X(d), y: h - 8, class: "axis", "text-anchor": "middle" },
+        [txt(d.slice(5).split("-").reverse().join("/"))]));
+    });
+
+    moving.forEach(function (m) {
+      var col = m.pct < 0 ? "var(--data)" : "var(--alt)";
+      var dstr = m.pts.map(function (p, i) {
+        return (i ? "L" : "M") + X(p.day) + " " + Y(p.price);
+      }).join(" ");
+      svg.appendChild(el("path", { d: dstr, fill: "none", stroke: col,
+        "stroke-width": 2, "stroke-linejoin": "round", "stroke-linecap": "round" }));
+      m.pts.forEach(function (p) {
+        var c = el("circle", { cx: X(p.day), cy: Y(p.price), r: 4.5, fill: col,
+          stroke: "var(--surface)", "stroke-width": 2 });
+        hover(c, m.name + "<br><b>" + vnd(p.price) + "</b> · " + p.day + "<br>" + m.shop);
+        svg.appendChild(c);
+      });
+      var last = m.pts[m.pts.length - 1];
+      svg.appendChild(el("text", { x: X(last.day) + 10, y: Y(last.price) + 4, class: "value" },
+        [txt((m.pct > 0 ? "+" : "") + m.pct.toFixed(1) + "% " + m.name.slice(0, 18))]));
+    });
+    return svg;
+  }
+
+  /* ---------- NPK like-for-like ---------- */
+  var groups = {};
+  D.npk.forEach(function (r) {
+    if (!groups[r.npk]) groups[r.npk] = [];
+    groups[r.npk].push(r);
+  });
+  var order = Object.keys(groups).map(function (k) {
+    var rows = groups[k].slice().sort(function (a, b) { return a.per_kg - b.per_kg; });
+    return { npk: k, rows: rows, spread: rows[rows.length - 1].per_kg / rows[0].per_kg };
+  }).sort(function (a, b) { return b.spread - a.spread; });
+
+  (function npkChart() {
+    // padR leaves room for the centred price label on the right-most dot,
+    // which sits at the axis maximum and would otherwise run past the viewBox.
+    var rowH = 48, padL = 96, padR = 60, w = 700;
+    var h = order.length * rowH + 36;
+    var max = Math.max.apply(null, D.npk.map(function (r) { return r.per_kg; }));
+    function X(v) { return padL + (w - padL - padR) * Math.sqrt(v / max); }
+
+    var svg = el("svg", { viewBox: "0 0 " + w + " " + h, width: "100%", height: h,
+      role: "img", "aria-label": "Giá mỗi kilogram theo công thức NPK, so sánh giữa các cửa hàng" });
+
+    [0.25, 0.5, 1].forEach(function (f) {
+      var v = max * f;
+      svg.appendChild(el("line", { x1: X(v), x2: X(v), y1: 24, y2: h - 14, class: "grid" }));
+      svg.appendChild(el("text", { x: X(v), y: 14, class: "axis", "text-anchor": "middle" },
+        [txt(vnd(v))]));
+    });
+    svg.appendChild(el("line", { x1: padL, x2: padL, y1: 24, y2: h - 14, class: "baseline" }));
+
+    order.forEach(function (g, i) {
+      var y = 38 + i * rowH;
+      svg.appendChild(el("text", { x: 0, y: y + 4, class: "rowlabel" }, [txt("NPK " + g.npk)]));
+      svg.appendChild(el("text", { x: 0, y: y + 19, class: "sublabel" },
+        [txt("chênh " + g.spread.toFixed(1) + "×")]));
+
+      var lo = g.rows[0], hi2 = g.rows[g.rows.length - 1];
+      svg.appendChild(el("line", { x1: X(lo.per_kg), x2: X(hi2.per_kg), y1: y, y2: y,
+        stroke: "var(--rule)", "stroke-width": 2, "stroke-linecap": "round" }));
+
+      // Two shops can price a formula within a few hundred dong of each
+      // other - sometimes identically - and the dots then sit on top of one
+      // another, hiding a shop and its tooltip. Step the crowded ones apart
+      // vertically so every shop stays visible and hoverable.
+      var prevX = -99, step = 0;
+      g.rows.forEach(function (r, j) {
+        var cx = X(r.per_kg);
+        step = (cx - prevX < 13) ? (step === 0 ? -6 : -step) : 0;
+        prevX = cx;
+        var cheap = j === 0;
+        var c = el("circle", { cx: cx, cy: y + step, r: cheap ? 6.5 : 5.5,
+          fill: cheap ? "var(--alt)" : "var(--data)",
+          stroke: "var(--surface)", "stroke-width": 2 });
+        hover(c, "<b>" + vnd(r.per_kg) + "/kg</b><br>" + r.shop + "<br>" + r.name.slice(0, 54));
+        svg.appendChild(c);
+      });
+
+      svg.appendChild(el("text", { x: X(lo.per_kg), y: y + 20, class: "value",
+        "text-anchor": "middle" }, [txt(vnd(lo.per_kg))]));
+      if (g.rows.length > 1) {
+        svg.appendChild(el("text", { x: X(hi2.per_kg), y: y - 13, class: "value",
+          "text-anchor": "middle" }, [txt(vnd(hi2.per_kg))]));
+      }
+    });
+    document.getElementById("npk").appendChild(svg);
+  })();
+
+  document.getElementById("npktable").innerHTML =
+    "<thead><tr><th>Công thức</th><th>Cửa hàng</th><th style=\"text-align:right\">Đồng/kg</th>" +
+    "<th>Sản phẩm</th></tr></thead><tbody>" +
+    order.map(function (g) {
+      return g.rows.map(function (r, j) {
+        return "<tr><td>" + (j === 0 ? "NPK " + g.npk : "") + "</td><td>" + r.shop +
+               "</td><td class=\"num\">" + vnd(r.per_kg) + "</td><td>" +
+               r.name.slice(0, 46) + "</td></tr>";
+      }).join("");
+    }).join("") + "</tbody>";
+
+  /* ---------- per shop ---------- */
+  document.getElementById("shopnote").innerHTML =
+    "Trung vị và khoảng giữa (25–75%) của đồng mỗi kilogram, <strong>chỉ tính hàng đóng gói " +
+    "từ " + D.bulk_kg + " kg trở lên</strong>. " + num(D.excluded_small) +
+    " gói nhỏ bị loại khỏi phép tính: hạt giống gói 5 gram quy ra kilogram thành hàng triệu " +
+    "đồng &mdash; đúng phép tính nhưng không ai mua hạt giống theo cân.";
+
+  (function shopChart() {
+    var rows = D.per_shop.slice().sort(function (a, b) { return a.median - b.median; });
+    var rowH = 40, padL = 140, padR = 108, w = 700;
+    var h = rows.length * rowH + 32;
+    var max = Math.max.apply(null, rows.map(function (r) { return r.q3; }));
+    function X(v) { return padL + (w - padL - padR) * Math.min(v / max, 1); }
+
+    var svg = el("svg", { viewBox: "0 0 " + w + " " + h, width: "100%", height: h,
+      role: "img", "aria-label": "Đơn giá trung vị mỗi kilogram theo cửa hàng" });
+
+    [0.25, 0.5, 0.75, 1].forEach(function (f) {
+      var v = max * f;
+      svg.appendChild(el("line", { x1: X(v), x2: X(v), y1: 22, y2: h - 12, class: "grid" }));
+      svg.appendChild(el("text", { x: X(v), y: 13, class: "axis", "text-anchor": "middle" },
+        [txt(vnd(v))]));
+    });
+    svg.appendChild(el("line", { x1: padL, x2: padL, y1: 22, y2: h - 12, class: "baseline" }));
+
+    rows.forEach(function (r, i) {
+      var y = 34 + i * rowH;
+      svg.appendChild(el("text", { x: 0, y: y + 3, class: "rowlabel" }, [txt(r.shop)]));
+      svg.appendChild(el("text", { x: 0, y: y + 18, class: "sublabel" },
+        [txt(r.n + " sản phẩm")]));
+
+      svg.appendChild(el("rect", { x: X(r.q1), y: y - 8, width: Math.max(X(r.q3) - X(r.q1), 3),
+        height: 16, rx: 3, fill: "var(--data-soft)" }));
+      svg.appendChild(el("rect", { x: X(r.median) - 1.5, y: y - 12, width: 3, height: 24,
+        rx: 1.5, fill: "var(--data)" }));
+      svg.appendChild(el("text", { x: X(r.q3) + 11, y: y + 4, class: "value" },
+        [txt(vnd(r.median))]));
+
+      var hit = el("rect", { x: padL, y: y - 15, width: w - padL - padR, height: 30, class: "hit" });
+      hover(hit, "<b>" + r.shop + "</b><br>trung vị <b>" + vnd(r.median) + "</b>/kg<br>" +
+        "khoảng giữa " + vnd(r.q1) + " – " + vnd(r.q3) + "<br>" + r.n + " sản phẩm");
+      svg.appendChild(hit);
+    });
+    document.getElementById("shops").appendChild(svg);
+  })();
+
+  document.getElementById("shoptable").innerHTML =
+    "<thead><tr><th>Cửa hàng</th><th style=\"text-align:right\">Sản phẩm</th>" +
+    "<th style=\"text-align:right\">Trung vị đ/kg</th><th style=\"text-align:right\">25%</th>" +
+    "<th style=\"text-align:right\">75%</th></tr></thead><tbody>" +
+    D.per_shop.slice().sort(function (a, b) { return a.median - b.median; }).map(function (r) {
+      return "<tr><td>" + r.shop + "</td><td class=\"num\">" + r.n + "</td><td class=\"num\">" +
+             vnd(r.median) + "</td><td class=\"num\">" + vnd(r.q1) + "</td><td class=\"num\">" +
+             vnd(r.q3) + "</td></tr>";
+    }).join("") + "</tbody>";
+
+  document.getElementById("foot").innerHTML =
+    "Nguồn: trang bán hàng công khai của " + D.totals.shops + " cửa hàng, thu thập theo robots.txt " +
+    "với giới hạn tốc độ. Giá quy đổi mỗi kilogram chỉ so sánh được trong cùng nhóm sản phẩm. " +
+    "Dữ liệu tạo lúc " + D.generated.replace("T", " ").slice(0, 16) + " UTC bằng <code>chart_data.py</code>.";
+})();
+</script>
