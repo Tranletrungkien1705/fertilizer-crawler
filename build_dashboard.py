@@ -28,7 +28,14 @@ if "__DATA__" not in html:
 payload = json.dumps(data, ensure_ascii=False, separators=(",", ":"))
 payload = payload.replace("</", "<\\/")
 
-out.write_text(html.replace("__DATA__", payload), encoding="utf-8")
-print(f"wrote {out.name} ({out.stat().st_size / 1024:.0f} KB)")
+rendered = html.replace("__DATA__", payload)
+out.write_text(rendered, encoding="utf-8")
+
+# Also publish to docs/ so GitHub Pages serves it at the repo root URL.
+pages = ROOT / "docs" / "index.html"
+pages.parent.mkdir(exist_ok=True)
+pages.write_text(rendered, encoding="utf-8")
+
+print(f"wrote {out.name} + docs/index.html ({out.stat().st_size / 1024:.0f} KB)")
 print(f"  {data['totals']['products']} products, {len(data['npk'])} npk rows, "
       f"{len(data['per_shop'])} shops, {data['history']['days']} day(s) of history")
